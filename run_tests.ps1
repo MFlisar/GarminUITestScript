@@ -253,12 +253,10 @@ function BuildAndRunTest($pathSDK, $pathSimTemp, $projectName, $tmpPath, $device
 	DeleteFile "$pathSimTemp\tmp.PRG"
 	DeleteFile "$pathSimTemp\TEMP\tmp.SET"
 
-	#WaitForUserInput
-	#BringWindowToFront 'simulator.exe'
-
 	# 4) build project (blocking)
-	# Write-Host "        BUILD: .\monkeyc -d $device -f "$pathMonkey" -o "$pathPrg" -y "$devKey" -s $version" -ForegroundColor RED
-	.\monkeyc -d $device -f "$pathMonkey" -o "$pathPrg" -y "$devKey" -s $version
+	# monkeyc does not allow to pass the UTF-8 format like eclipse is doing it => we just use the monkeybrains like eclipse does it instead
+	# .\monkeyc -d $device -f "$pathMonkey" -o "$pathPrg" -y "$devKey" -s $version
+	java "-Dfile.encoding=UTF-8" "-Dapple.awt.UIElement=true" -jar $pathSDK\monkeybrains.jar -d $device -f "$pathMonkey" -o "$pathPrg" -y "$devKey" -s $version
 
 	#5) push prg to SIM (non blocking)
 	Start-Process -WindowStyle hidden -FilePath ".\monkeydo" -ArgumentList "`"$pathPrg`" $device"
