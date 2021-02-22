@@ -1,7 +1,27 @@
 # GarminUITestScript
 Powershell Scripts to test garmin devices on windows
 
-# Usage
+# Run the demo
+
+After downloading or cloning this repo you must do following to run the tests on the demo app:
+
+* **test_demo.dat**
+  * change the value of *projectDirectory*  to point to the demo project directory
+* **settings.dat**
+  * change the value of *pathSDK* to point to your local CIQ SDK path
+  * change the value of *pathScreenshots* to point to a path where you want to save the screenshots
+  * change the value of *devKey* to point to your CIQ developer key file
+  * change the value of *tmpPath* to point to an unused temp. folder - this folder will be deleted and recreated on each test run_tests
+  * SPECIAL (% = alt key)
+    * change the value of *shortcutAddressBar* to the keyboard shortcut that puts the cursor in a save as dialog into the address bar - should be *%E* in a german setup and *%D* in an english setup
+    * change the value of *shortcutSaveAsName* to the keyboard shortcut that puts the cursor in a save as dialog into the file name field - should be *%N* in german and english
+    * change the value of *shortcutFileType* to the keyboard shortcut that puts the cursor in a save as dialog into the file type field - should be *%T* in german and english
+
+Those special keys are used to save the screenshots in the correct location.
+
+After this you are done and trying the demo by running *run_tests.ps1* should already create 6 screenshots inside the defined screenshot folder.
+
+# General Usage
 
 **Step 1**
 
@@ -20,7 +40,6 @@ A test file can have following unique entries:
 
   - empty lines / whitespace online lines... those line will be skipped
   - lines beginning with '#'... those lines are ignored as well, use them for your comments
-  - name=<VALUE>... project name - only used for printing
   - projectName=<VALUE>... project name
   - projectDirectory=<VALUE>... root directory of the project to test
   - dependencies=<VALUE>... an array of relative included paths (e.g. *..\shared\some-resources*) - can be empty as well if you don't use such paths
@@ -31,3 +50,17 @@ A test file can have following unique entries:
 And following non unique entries
 
   -properties=<VALUE>... a CSV string containing mappings of property ids to values (e.g. *data1=1;data2=2;data3=3*)
+
+**Step 3**
+
+Run the tests via *run_tests.ps1*
+
+# IMPORTANT NOTES
+
+- this script can be used as is
+- attributions are always welcome
+- there are *no error checks* in this script - this is something that could be improved
+- make sure no file is opened in an editor during TESTS
+- don't click around during tests - some UI tests (making a screenshot) do depend on focus windows
+
+I could only test this on my machine, maybe small adjustments are necessary on your device

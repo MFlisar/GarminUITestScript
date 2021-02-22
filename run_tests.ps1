@@ -21,7 +21,11 @@ Class SettingsFile
 	[String] FindValue($key)
 	{
 		$result = $this.settings | Where-Object { $_.key -eq $key }
-		return $result[0].value
+		if ($result -eq $null) {
+			return $null
+		} else {
+			return $result[0].value
+		}
 	}
 
 	[System.Collections.ArrayList] FindMultipleValue($key)
@@ -219,9 +223,12 @@ function PrepareTest($projectDirectory, $projectName, $tmpPath, $dependencies)
 	Copy-Item -Path $projectDirectory -Destination "$tmpPath\$projectName" -Recurse -Force
 
 	#3) Copy all relative folders
-	foreach ($dependency in $dependencies)
+	if ($dependencies -ne $null)
 	{
-		Copy-Item -Path $dependency -Destination "$tmpPath\$projectName\$dependency" -Recurse -Force
+		foreach ($dependency in $dependencies)
+		{
+			Copy-Item -Path $dependency -Destination "$tmpPath\$projectName\$dependency" -Recurse -Force
+		}
 	}
 }
 
@@ -327,7 +334,6 @@ CreateFolder $pathScreenshots
 
 foreach ($testFile in $testFiles)
 {
-	$name = $testFile.FindValue("name")
 	$projectName = $testFile.FindValue("projectName")
 	$projectDirectory = $testFile.FindValue("projectDirectory")
 	$dependencies = $testFile.FindValue("dependencies") -split ";"
@@ -335,7 +341,7 @@ foreach ($testFile in $testFiles)
 	$devices = $testFile.FindValue("devices") -split ";"
 	$version = $testFile.FindValue("version")
 
-	Write-Host "  - Test $i - '$($name)' ($($testFile.fileName))" -ForegroundColor Green
+	Write-Host "  - Test $i - '$($projectName)' ($($testFile.fileName))" -ForegroundColor Green
 	Write-Host "    - Devices to test: $($devices.Count)"
 	Write-Host "    - Properties to test: $($properties.Count)"
 	Write-Host "    - Tests"
