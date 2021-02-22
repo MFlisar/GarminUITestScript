@@ -64,5 +64,6 @@ If you want to run a single test file only and have multiple ones defines, simpl
 - there are *no error checks* in this script - this is something that could be improved
 - make sure no file is opened in an editor during TESTS
 - don't click around during tests - some UI tests (making a screenshot) do depend on focus windows
+- placeholder paths will not work if they are needed for the screenshot part, because they way that strings are inserted into the window do not support %...
 
 I could only test this on my machine, maybe small adjustments are necessary on your device
