@@ -279,6 +279,8 @@ function BuildAndRunTest($pathSDK, $pathSimTemp, $projectName, $tmpPath, $device
 # STEP 1 - Reading settings and test files
 # -------------------------------
 
+$singleTestFile = $args[0]
+
 $simName = 'simulator.exe'
 $pathSimTemp = '%Temp%\GARMIN\APPS'
 
@@ -316,7 +318,18 @@ Write-Host "-------------------------------"
 Write-Host "- [STEP 2] Reading test files"
 Write-Host "-------------------------------"
 Write-Host ""
-$testFiles | ForEach-Object { Write-Host "  - Test: $($_.fileName)" }
+
+if ($singleTestFile -eq $null -or $singleTestFile -eq "")
+{
+	$testFiles | ForEach-Object { Write-Host "  - Test: $($_.fileName)" }
+}
+else
+{
+	Write-Host "Single Test File provided: $singleTestFile"
+
+	$f = ReadSettings $singleTestFile
+	$testFiles = @($f)
+}
 
 # -------------------------------
 # STEP 3 - Running each test

@@ -53,7 +53,9 @@ And following non unique entries
 
 **Step 3**
 
-Run the tests via *run_tests.ps1*
+Run the tests via *run_tests.ps1*. This will run *ALL* test files.
+
+If you want to run a single test file only and have multiple ones defines, simply pass the test file as first command line argument to *run_tests.ps1* like *run_tests.ps1 test_demo.bat*
 
 # IMPORTANT NOTES
 
