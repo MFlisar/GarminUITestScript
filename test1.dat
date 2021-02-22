@@ -1,0 +1,35 @@
+# GENERAL
+name=Phoenix V2.2
+projectName=phoenix-v2.2
+projectDirectory=M:\dev\06 - garmin\phoenix-v2.2
+dependencies=..\shared-definitions;..\shared-res-core;..\shared-res-strings;..\shared-src-core;..\shared-src-data;..\shared-src-devices
+version=3.2.0
+
+# TESTS
+properties=data1=1;data2=2;data3=3;data4=4;data5=5;data6=6
+properties=data1=8;data2=9;data3=10;data4=11;data5=12;data6=13
+properties=data1=14;data2=15;data3=16;data4=0;data5=0;data6=0
+properties=data1=100;data2=101;data3=102;data4=103;data5=200;data6=201
+properties=data1=300;data2=301;data3=302;data4=303;data5=400;data6=401
+properties=data1=500;data2=501;data3=600;data4=0;data5=0;data6=0
+
+# Graphs Top/Bottom
+properties=data10=700;data13=700
+properties=data10=701;data13=701
+properties=data10=702;data13=702
+properties=data10=703;data13=703
+properties=data10=704;data13=704
+properties=data10=705;data13=705
+properties=data10=706;data13=706
+properties=data10=707;data13=707
+properties=data10=708;data13=708
+
+# Wetter Details Top/Bottom
+properties=data10=800;data13=800
+properties=data10=801;data13=801
+
+# Specials Top/Bottom
+properties=data10=900;data13=900
+properties=data10=901;data13=901
+
+devices=fenix6xpro;fenix5plus
