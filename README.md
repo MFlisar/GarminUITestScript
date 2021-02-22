@@ -40,16 +40,16 @@ A test file can have following unique entries:
 
   - empty lines / whitespace online lines... those line will be skipped
   - lines beginning with '#'... those lines are ignored as well, use them for your comments
-  - projectName=<VALUE>... project name
-  - projectDirectory=<VALUE>... root directory of the project to test
-  - dependencies=<VALUE>... an array of relative included paths (e.g. *..\shared\some-resources*) - can be empty as well if you don't use such paths
-  - version=<VALUE>... SDK Version (e.g. *3.2.0*)
+  - projectName=VALUE... project name
+  - projectDirectory=VALUE... root directory of the project to test
+  - dependencies=VALUE... an array of relative included paths (e.g. *..\shared\some-resources*) - can be empty as well if you don't use such paths
+  - version=VALUE... SDK Version (e.g. *3.2.0*)
 
-  - devices=<VALUE>... Devices to test (e.g. *fenix6xpro;fenix5plus*)
+  - devices=VALUE... Devices to test (e.g. *fenix6xpro;fenix5plus*)
 
 And following non unique entries
 
-  -properties=<VALUE>... a CSV string containing mappings of property ids to values (e.g. *data1=1;data2=2;data3=3*)
+  -properties=VALUE... a CSV string containing mappings of property ids to values (e.g. *data1=1;data2=2;data3=3*)
 
 **Step 3**
 
