@@ -21,9 +21,12 @@ Class SettingsFile
 	[String] FindValue($key)
 	{
 		$result = $this.settings | Where-Object { $_.key -eq $key }
-		if ($result -eq $null) {
+		if ($result -eq $null) 
+		{
 			return $null
-		} else {
+		} 
+		else
+		{
 			return $result[0].value
 		}
 	}
@@ -69,11 +72,65 @@ function ReadSettings($path)
 
 function BringWindowToFront($ProcessName)
 {
-  # As a courtesy, strip '.exe' from the name, if present.
-  $ProcessName = $ProcessName -replace '\.exe$'
-  $procId = (Get-Process -ErrorAction Ignore $ProcessName).Where({ $_.MainWindowTitle }, 'First').Id
-  if (-not $procId) { Throw "No $ProcessName process with a non-empty window title found." }
+  $process = Get-Process | Where-Object { $_.MainWindowTitle -like $ProcessName }
+  $procId = $process.Id
   $null = (New-Object -ComObject WScript.Shell).AppActivate($procId)
+}
+
+function GetWindowRect($h)
+{
+	Try { 
+		[void][Window]
+	} Catch {
+		Add-Type @"
+			using System;
+			using System.Runtime.InteropServices;
+			public class Window {
+			[DllImport("user32.dll")]
+			[return: MarshalAs(UnmanagedType.Bool)]
+			public static extern bool GetWindowRect(
+				IntPtr hWnd, out RECT lpRect);
+
+			[DllImport("user32.dll")]
+			[return: MarshalAs(UnmanagedType.Bool)]
+			public extern static bool MoveWindow( 
+				IntPtr handle, int x, int y, int width, int height, bool redraw);
+
+			[DllImport("user32.dll")] 
+			[return: MarshalAs(UnmanagedType.Bool)]
+			public static extern bool ShowWindow(
+				IntPtr handle, int state);
+			}
+			public struct RECT
+			{
+				public int Left;        // x position of upper-left corner
+				public int Top;         // y position of upper-left corner
+				public int Right;       // x position of lower-right corner
+				public int Bottom;      // y position of lower-right corner
+			}
+"@
+	}
+
+	$rect = New-Object RECT
+	$res = [Window]::GetWindowRect($h, [ref]$rect)
+	
+	$l = [int]$rect.Left
+	$t = [int]$rect.Top
+	$w = $rect.Right - $rect.Left
+	$h = $rect.Bottom - $rect.Top
+	
+	return @($l, $t, $w, $h)
+}
+
+function SaveScreenshot($path, $processName)
+{
+	[Reflection.Assembly]::LoadWithPartialName("System.Drawing") > $null
+	$h = Get-Process | Where-Object {$_.MainWindowTitle -like $processName} | Select-Object -ExpandProperty MainWindowHandle
+	$l, $t, $w, $h = GetWindowRect $h
+	$bitmap = New-Object System.Drawing.Bitmap $w, $h
+	$graphic = [System.Drawing.Graphics]::FromImage($bitmap)
+	$graphic.CopyFromScreen($l, $t, 0, 0, $bitmap.Size)
+	$bitmap.Save($path)
 }
 
 function DeleteFile($path)
@@ -154,34 +211,6 @@ function ReplaceInXMLFile($file, $properties)
 # -----------
 # SIM Functions
 # -----------
-
-function MakeScreenshot($path, $name, $shortcutAddressBar, $shortcutSaveAsName, $shortcutFileType)
-{
-	# https://stackoverflow.com/questions/19824799/how-to-send-ctrl-or-alt-any-other-key
-	# SHIFT  +
-	# CTRL   ^
-	# ALT    %
-
-	$wshell = New-Object -ComObject wscript.shell;
-	$wshell.SendKeys('%')
-	$wshell.SendKeys('F')
-	$wshell.SendKeys('S')
-
-	Start-Sleep -s 1
-
-	$wshell.SendKeys($shortcutAddressBar)
-	$wshell.SendKeys($path)
-	$wshell.SendKeys("{ENTER}")
-
-	Start-Sleep -s 1
-
-	$wshell.SendKeys($shortcutFileType)
-	$wshell.SendKeys($shortcutSaveAsName)
-	$wshell.SendKeys($name)
-	$wshell.SendKeys("{ENTER}")
-
-	Start-Sleep -s 1
-}
 
 function ResetSim()
 {
@@ -273,13 +302,17 @@ function BuildAndRunTest($pathSDK, $pathSimTemp, $projectName, $tmpPath, $device
 # Step 2: Create one or more test files (*.dat) Files defining test name and properties that needs to be changed for the test case
 # Step 3: run this test file
 
+# Following helps if you start the script in windows via double click or start with right click command
+Set-Location -LiteralPath $PSScriptRoot
+
 # -------------------------------
 # STEP 1 - Reading settings and test files
 # -------------------------------
 
 $singleTestFile = $args[0]
 
-$simName = 'simulator.exe'
+$shell = "Windows PowerShell"
+$simName = "Connect IQ*"
 $pathSimTemp = '%Temp%\GARMIN\APPS'
 
 $ext = "dat"
@@ -293,13 +326,11 @@ $pathScreenshots = $settings.FindValue("pathScreenshots")
 $devKey = $settings.FindValue("devKey")
 $tmpPath = $settings.FindValue("tmpPath")
 
-$shortcutAddressBar = $settings.FindValue("shortcutAddressBar")
-$shortcutSaveAsName = $settings.FindValue("shortcutSaveAsName")
-$shortcutFileType = $settings.FindValue("shortcutFileType")
+$step = 1
 
 Write-Host ""
 Write-Host "-------------------------------"
-Write-Host "- [STEP 1] Reading settings"
+Write-Host "- [STEP $step] Reading settings"
 Write-Host "-------------------------------"
 Write-Host ""
 Write-Host "  - SDK Path: $pathSDK"
@@ -307,16 +338,19 @@ Write-Host "  - Screenshots Path: $pathScreenshots"
 Write-Host "  - Dev Key: $devKey"
 Write-Host "  - Temp. Path: $tmpPath"
 
+$step++
+
 # -------------------------------
 # STEP 2 - Reading all test files
 # -------------------------------
 
 Write-Host ""
 Write-Host "-------------------------------"
-Write-Host "- [STEP 2] Reading test files"
+Write-Host "- [STEP $step] Reading test files"
 Write-Host "-------------------------------"
 Write-Host ""
 
+$askForFile = $true
 if ($singleTestFile -eq $null -or $singleTestFile -eq "")
 {
 	$testFiles | ForEach-Object { Write-Host "  - Test: $($_.fileName)" }
@@ -327,15 +361,70 @@ else
 
 	$f = ReadSettings $singleTestFile
 	$testFiles = @($f)
+	
+	$askForFile = $false
+}
+
+$step++
+
+# -------------------------------
+# STEP 3 - Ask for file
+# -------------------------------
+
+if ($askForFile )
+{	
+	Write-Host ""
+	Write-Host "-------------------------------"
+	Write-Host "- [STEP $step] Select test file(s)"
+	Write-Host "-------------------------------"
+	Write-Host ""
+	Write-Host "  Which test do you want to start?"
+	Write-Host ""
+	$i = 0
+	Write-Host "  - [0] ALL"
+	foreach ($testFile in $testFiles)
+	{
+		$i++
+		Write-Host "  - [$i] $($testFile.fileName)"
+	}
+	Write-Host ""
+	
+	$index = Read-Host -Prompt '  Select a test case (by index)'
+	
+	[int]$idx = -1
+	[bool]$success = [int]::TryParse($index, [ref]$idx)
+	
+	if ($idx -eq 0)
+	{
+		# nothing to do - all test cases should be run
+	}
+	elseif ($idx -gt $testFiles.Count)
+	{
+		$invalid = $true
+	}
+	else
+	{
+		$testFiles = @($testFiles[$idx - 1])
+	}
+
+	if ($invalid)
+	{
+		Write-Host "Invalid input, you must input a valid number in a valid range!"
+		WaitForUserInput
+		return
+	}
+	
+	
+	$step++
 }
 
 # -------------------------------
-# STEP 3 - Running each test
+# STEP 4 - Running each test
 # -------------------------------
 
 Write-Host ""
 Write-Host "-------------------------------"
-Write-Host "- [STEP 3] Running tests"
+Write-Host "- [STEP $step] Running tests"
 Write-Host "-------------------------------"
 Write-Host ""
 
@@ -343,6 +432,10 @@ StartSim $pathSDK
 DeleteFolder $pathScreenshots
 CreateFolder $pathScreenshots
 
+Read-Host -Prompt '  Change the SIM settings to your likings (simulate data, set activity monitor info, ...)'
+Write-Host ""
+
+$i = 0
 foreach ($testFile in $testFiles)
 {
 	$projectName = $testFile.FindValue("projectName")
@@ -353,8 +446,8 @@ foreach ($testFile in $testFiles)
 	$version = $testFile.FindValue("version")
 
 	Write-Host "  - Test $i - '$($projectName)' ($($testFile.fileName))" -ForegroundColor Green
-	Write-Host "    - Devices to test: $($devices.Count)"
-	Write-Host "    - Properties to test: $($properties.Count)"
+	Write-Host "    - # Devices:    $($devices.Count)"
+	Write-Host "    - # Test Cases: $($properties.Count)"
 	Write-Host "    - Tests"
 
 	# Preparing test - this copies project + dependencies to the tmp path
@@ -375,7 +468,7 @@ foreach ($testFile in $testFiles)
 
 			# Make a screenshot
 			BringWindowToFront $simName
-		 	MakeScreenshot $pathScreenshots $screenshotName $shortcutAddressBar $shortcutSaveAsName $shortcutFileType
+			SaveScreenshot "$pathScreenshots\$screenshotName" $simName
 
 			$i++
 		}

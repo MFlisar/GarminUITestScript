@@ -12,10 +12,6 @@ After downloading or cloning this repo you must do following to run the tests on
   * change the value of *pathScreenshots* to point to a path where you want to save the screenshots
   * change the value of *devKey* to point to your CIQ developer key file
   * change the value of *tmpPath* to point to an unused temp. folder - this folder will be deleted and recreated on each test run_tests
-  * SPECIAL (% = alt key)
-    * change the value of *shortcutAddressBar* to the keyboard shortcut that puts the cursor in a save as dialog into the address bar - should be *%E* in a german setup and *%D* in an english setup
-    * change the value of *shortcutSaveAsName* to the keyboard shortcut that puts the cursor in a save as dialog into the file name field - should be *%N* in german and english
-    * change the value of *shortcutFileType* to the keyboard shortcut that puts the cursor in a save as dialog into the file type field - should be *%T* in german and english
 
 Those special keys are used to save the screenshots in the correct location.
 
@@ -63,7 +59,7 @@ If you want to run a single test file only and have multiple ones defines, simpl
 - attributions are always welcome
 - there are *no error checks* in this script - this is something that could be improved
 - make sure no file is opened in an editor during TESTS
-- don't click around during tests - some UI tests (making a screenshot) do depend on focus windows
+- don't click around during tests - some UI interactions with the sim and making a screenshot do depend on the sim being the current foreground window
 - placeholder paths will not work if they are needed for the screenshot part, because they way that strings are inserted into the window do not support %...
 
 I could only test this on my machine, maybe small adjustments are necessary on your device

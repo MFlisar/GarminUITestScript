@@ -2,8 +2,3 @@ pathSDK=C:\Users\mflisar\AppData\Roaming\Garmin\ConnectIQ\Sdks\connectiq-sdk-win
 pathScreenshots=C:\Users\mflisar\Desktop\garmin_screenshots
 devKey=M:\dev\02 - keystores\garmin_connect_iq_dev_key
 tmpPath=M:\dev\tmp
-
-# Shortcuts for save as dialog (german: E + N + T, english: D + N + T, ...)
-shortcutAddressBar=%E
-shortcutSaveAsName=%N
-shortcutFileType=%T
