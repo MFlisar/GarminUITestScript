@@ -1,4 +1,4 @@
 pathSDK=C:\Users\mflisar\AppData\Roaming\Garmin\ConnectIQ\Sdks\connectiq-sdk-win-3.2.5-2021-02-12-6d31f4357\bin
-pathScreenshots=C:\Users\mflisar\Desktop\garmin_screenshots
+pathScreenshots=M:\dev\06 - garmin\GarminUITestScript\screenshots
 devKey=M:\dev\02 - keystores\garmin_connect_iq_dev_key
 tmpPath=M:\dev\tmp

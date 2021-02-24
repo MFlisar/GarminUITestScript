@@ -218,13 +218,13 @@ function ResetSim()
 	# SHIFT  +
 	# CTRL   ^
 	# ALT    %
-
+	
 	$wshell = New-Object -ComObject wscript.shell;
 	$wshell.SendKeys('%')
 	$wshell.SendKeys('F')
 	$wshell.SendKeys('D')
 
-	Start-Sleep -s 2
+	Start-Sleep -s 1
 }
 
 function StartSim($sdkath)
@@ -261,7 +261,7 @@ function PrepareTest($projectDirectory, $projectName, $tmpPath, $dependencies)
 	}
 }
 
-function BuildAndRunTest($pathSDK, $pathSimTemp, $projectName, $tmpPath, $device, $version, $prop)
+function BuildAndRunTest($pathSDK, $pathSimTemp, $projectName, $tmpPath, $device, $version, $prop, $simName)
 {
 	Write-Host "      - $device => $prop"# -ForegroundColor Red
 
@@ -435,6 +435,8 @@ CreateFolder $pathScreenshots
 Read-Host -Prompt '  Change the SIM settings to your likings (simulate data, set activity monitor info, ...)'
 Write-Host ""
 
+BringWindowToFront $simName
+
 $i = 0
 foreach ($testFile in $testFiles)
 {
@@ -459,6 +461,8 @@ foreach ($testFile in $testFiles)
 		foreach ($prop in $properties)
 		{
 			$screenshotName = "$($projectName)_$($device)_$($i).png"
+			
+			BringWindowToFront $simName
 
 			# Run tests - does following:
 			# - changes the properties.xml file inside the copy inside the tmp path
@@ -467,7 +471,6 @@ foreach ($testFile in $testFiles)
 			BuildAndRunTest $pathSDK $pathSimTemp $projectName $tmpPath $device $version $prop
 
 			# Make a screenshot
-			BringWindowToFront $simName
 			SaveScreenshot "$pathScreenshots\$screenshotName" $simName
 
 			$i++
@@ -477,4 +480,5 @@ foreach ($testFile in $testFiles)
 
 Write-Host ""
 
+BringWindowToFront $shell
 WaitForUserInput
