@@ -34,6 +34,9 @@ Class SettingsFile
 	[System.Collections.ArrayList] FindMultipleValue($key)
 	{
 		$result = $this.settings | Where-Object { $_.key -eq $key } | ForEach-Object { $_.value }
+		if ($result.Count -eq 1) {
+			return ,$result
+		}
 		return $result
 	}
 }
@@ -57,24 +60,22 @@ Class Setting
 function ReadSettings($path)
 {
 	$settingsFile = [SettingsFile]::new($path)
-
-	foreach($line in Get-Content $path) {
-
+	Get-Content $path | ForEach-Object {
+		$line = $_
 		if ($line.Trim().Length -ne 0 -and (-not $line.Trim().StartsWith("#")))
 		{
 			$splitted = $line -split "=",2
 			$settingsFile.Add([Setting]::new($splitted[0], $splitted[1])) > $null
 		}
 	}
-
 	$settingsFile
 }
 
 function BringWindowToFront($ProcessName)
 {
-  $process = Get-Process | Where-Object { $_.MainWindowTitle -like $ProcessName }
-  $procId = $process.Id
-  $null = (New-Object -ComObject WScript.Shell).AppActivate($procId)
+	$process = Get-Process | Where-Object { $_.MainWindowTitle -like $ProcessName }
+	$procId = $process.Id
+	$null = (New-Object -ComObject WScript.Shell).AppActivate($procId)
 }
 
 function GetWindowRect($h)
@@ -131,6 +132,39 @@ function SaveScreenshot($path, $processName)
 	$graphic = [System.Drawing.Graphics]::FromImage($bitmap)
 	$graphic.CopyFromScreen($l, $t, 0, 0, $bitmap.Size)
 	$bitmap.Save($path)
+}
+
+function SaveScreenshotViaSim($path, $name, $shortcutAddressBar, $shortcutSaveAsName, $shortcutFileType, $simName, $changeFolder)
+{
+	BringWindowToFront $simName
+	
+	# https://stackoverflow.com/questions/19824799/how-to-send-ctrl-or-alt-any-other-key
+	# SHIFT  +
+	# CTRL   ^
+	# ALT    %
+
+	$wshell = New-Object -ComObject wscript.shell;
+	$wshell.SendKeys('%')
+	$wshell.SendKeys('F')
+	$wshell.SendKeys('S')
+	
+	Start-Sleep -s 1
+	
+	if ($changeFolder)
+	{
+		$wshell.SendKeys($shortcutAddressBar)
+		$wshell.SendKeys($path)
+		$wshell.SendKeys("{ENTER}")
+
+		Start-Sleep -s 1
+	}
+
+	$wshell.SendKeys($shortcutFileType)
+	$wshell.SendKeys($shortcutSaveAsName)
+	$wshell.SendKeys($name)
+	$wshell.SendKeys("{ENTER}")
+
+	Start-Sleep -s 1
 }
 
 function DeleteFile($path)
@@ -272,6 +306,7 @@ function BuildAndRunTest($pathSDK, $pathSimTemp, $projectName, $tmpPath, $device
 	Set-Location -Path $pathSDK
 
 	# 1) Reset SIM
+	BringWindowToFront $simName
 	ResetSim
 
 	# 2) replace all properties inside the properties.xml file
@@ -281,7 +316,7 @@ function BuildAndRunTest($pathSDK, $pathSimTemp, $projectName, $tmpPath, $device
 	DeleteFolder "$path\bin"
 	DeleteFile "$pathSimTemp\tmp.PRG"
 	DeleteFile "$pathSimTemp\TEMP\tmp.SET"
-
+	
 	# 4) build project (blocking)
 	# monkeyc does not allow to pass the UTF-8 format like eclipse is doing it => we just use the monkeybrains like eclipse does it instead
 	# .\monkeyc -d $device -f "$pathMonkey" -o "$pathPrg" -y "$devKey" -s $version
@@ -305,6 +340,12 @@ function BuildAndRunTest($pathSDK, $pathSimTemp, $projectName, $tmpPath, $device
 # Following helps if you start the script in windows via double click or start with right click command
 Set-Location -LiteralPath $PSScriptRoot
 
+# Special Settings: following must be adjusted if screenshots should be taken in original resolution via the sims screenshot menu item
+$makeScreenshotViaSim = $false
+$shortcutAddressBar = "%E"
+$shortcutSaveAsName = "%N"
+$shortcutFileType = "%T"
+
 # -------------------------------
 # STEP 1 - Reading settings and test files
 # -------------------------------
@@ -312,7 +353,7 @@ Set-Location -LiteralPath $PSScriptRoot
 $singleTestFile = $args[0]
 
 $shell = "Windows PowerShell"
-$simName = "Connect IQ*"
+$simName = "Connect IQ Device Simulator"
 $pathSimTemp = '%Temp%\GARMIN\APPS'
 
 $ext = "dat"
@@ -437,7 +478,7 @@ Write-Host ""
 
 BringWindowToFront $simName
 
-$i = 0
+$t = 1
 foreach ($testFile in $testFiles)
 {
 	$projectName = $testFile.FindValue("projectName")
@@ -447,11 +488,12 @@ foreach ($testFile in $testFiles)
 	$devices = $testFile.FindValue("devices") -split ";"
 	$version = $testFile.FindValue("version")
 
-	Write-Host "  - Test $i - '$($projectName)' ($($testFile.fileName))" -ForegroundColor Green
+	Write-Host "  - Test $t - '$($projectName)' ($($testFile.fileName))" -ForegroundColor Green
 	Write-Host "    - # Devices:    $($devices.Count)"
 	Write-Host "    - # Test Cases: $($properties.Count)"
 	Write-Host "    - Tests"
-
+	
+	
 	# Preparing test - this copies project + dependencies to the tmp path
 	PrepareTest $projectDirectory $projectName $tmpPath $dependencies
 
@@ -462,20 +504,27 @@ foreach ($testFile in $testFiles)
 		{
 			$screenshotName = "$($projectName)_$($device)_$($i).png"
 			
-			BringWindowToFront $simName
-
 			# Run tests - does following:
 			# - changes the properties.xml file inside the copy inside the tmp path
 			# - builds the project
 			# - runs the project in the sim
-			BuildAndRunTest $pathSDK $pathSimTemp $projectName $tmpPath $device $version $prop
+			BuildAndRunTest $pathSDK $pathSimTemp $projectName $tmpPath $device $version $prop $simName
 
 			# Make a screenshot
-			SaveScreenshot "$pathScreenshots\$screenshotName" $simName
+			if ($makeScreenshotViaSim)
+			{
+				$changeFolder = ($t -eq 1) -and ($i -eq 1)
+				SaveScreenshotViaSim $pathScreenshots $screenshotName $shortcutAddressBar $shortcutSaveAsName $shortcutFileType $simName $changeFolder
+			}
+			else
+			{
+				SaveScreenshot "$pathScreenshots\$screenshotName" $simName
+			}
 
 			$i++
 		}
 	}
+	$t++
 }
 
 Write-Host ""

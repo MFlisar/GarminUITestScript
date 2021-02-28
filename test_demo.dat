@@ -1,13 +1,22 @@
-# GENERAL
+### -------
+### GENERAL
+### -------
+
 projectName=test-project
 projectDirectory=M:\dev\06 - garmin\GarminUITestScript\test-project
 # dependencies are unused in the demo
 #dependencies=
 version=3.2.0
 
-# TESTS
+### -----
+### TESTS
+### -----
+
 properties=BackgroundColor=0x000000;ForegroundColor=0xFFFFFF
-properties=BackgroundColor=0xFFFFFF;ForegroundColor=0x000000
-properties=BackgroundColor=0xFF0000;ForegroundColor=0x0000FF
+
+
+### -------
+### DEVICES
+### -------
 
 devices=fenix6xpro;fenix5plus
